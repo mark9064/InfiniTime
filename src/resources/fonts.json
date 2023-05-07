@@ -43,6 +43,17 @@
       "size": 40,
       "target_path": "/fastfonts/"
    },
+   "seven_segments_95" : {
+      "sources": [
+         {
+            "file": "fonts/7segment.woff",
+            "symbols": "0123456789: -"
+         }
+      ],
+      "bpp": 1,
+      "size": 95,
+      "target_path": "/fastfonts/"
+   },
    "seven_segments_115" : {
       "sources": [
          {

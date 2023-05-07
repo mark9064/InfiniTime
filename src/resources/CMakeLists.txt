@@ -1,5 +1,5 @@
 set(FONTS teko bebas lv_font_dots_40
-seven_segments_40 seven_segments_115)
+seven_segments_40 seven_segments_95 seven_segments_115)
 
 find_program(LV_FONT_CONV "lv_font_conv" NO_CACHE REQUIRED
     HINTS "${CMAKE_SOURCE_DIR}/node_modules/.bin")
