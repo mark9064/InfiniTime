@@ -46,16 +46,16 @@ namespace Pinetime {
           {Symbols::stopWatch, Apps::StopWatch, true},
           {Symbols::clock, Apps::Alarm, true},
           {Symbols::hourGlass, Apps::Timer, true},
-          {Symbols::shoe, Apps::Steps, true},
+          {Symbols::calculator, Apps::Calculator, true},
           {Symbols::heartBeat, Apps::HeartRate, true},
           {Symbols::music, Apps::Music, true},
 
           {Symbols::paintbrush, Apps::Paint, true},
           {Symbols::paddle, Apps::Paddle, true},
           {"2", Apps::Twos, true},
+          {Symbols::shoe, Apps::Steps, true},
           {Symbols::drum, Apps::Metronome, true},
           {Symbols::map, Apps::Navigation, Applications::Screens::Navigation::IsAvailable(filesystem)},
-          {Symbols::none, Apps::None, false},
 
           // {"M", Apps::Motion},
         }};
