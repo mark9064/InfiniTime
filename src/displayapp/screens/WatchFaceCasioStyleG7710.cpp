@@ -43,10 +43,15 @@ WatchFaceCasioStyleG7710::WatchFaceCasioStyleG7710(Controllers::DateTime& dateTi
     font_segment40 = lv_font_load("F:/fonts/7segments_40.bin");
   }
 
-  if (filesystem.FileOpen(&f, "/fonts/7segments_115.bin", LFS_O_RDONLY) >= 0) {
+  if (filesystem.FileOpen(&f, "/fonts/7segments_95.bin", LFS_O_RDONLY) >= 0) {
     filesystem.FileClose(&f);
-    font_segment115 = lv_font_load("F:/fonts/7segments_115.bin");
+    font_segment95 = lv_font_load("F:/fonts/7segments_95.bin");
   }
+
+  // if (filesystem.FileOpen(&f, "/fonts/7segments_115.bin", LFS_O_RDONLY) >= 0) {
+  //   filesystem.FileClose(&f);
+  //   font_segment115 = lv_font_load("F:/fonts/7segments_115.bin");
+  // }
 
   label_battery_value = lv_label_create(lv_scr_act(), nullptr);
   lv_obj_align(label_battery_value, lv_scr_act(), LV_ALIGN_IN_TOP_RIGHT, 0, 0);
@@ -128,8 +133,13 @@ WatchFaceCasioStyleG7710::WatchFaceCasioStyleG7710(Controllers::DateTime& dateTi
 
   label_time = lv_label_create(lv_scr_act(), nullptr);
   lv_obj_set_style_local_text_color(label_time, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, color_text);
-  lv_obj_set_style_local_text_font(label_time, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, font_segment115);
-  lv_obj_align(label_time, lv_scr_act(), LV_ALIGN_CENTER, 0, 40);
+  lv_obj_set_style_local_text_font(label_time, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, font_segment95);
+  lv_obj_align(label_time, lv_scr_act(), LV_ALIGN_CENTER, -22, 38);
+
+  label_seconds = lv_label_create(lv_scr_act(), nullptr);
+  lv_obj_set_style_local_text_color(label_seconds, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, color_text);
+  lv_obj_set_style_local_text_font(label_seconds, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, font_segment40);
+  lv_obj_align(label_seconds, lv_scr_act(), LV_ALIGN_IN_RIGHT_MID, -2, 58);
 
   line_time = lv_line_create(lv_scr_act(), nullptr);
   lv_line_set_points(line_time, line_time_points, 3);
@@ -186,9 +196,13 @@ WatchFaceCasioStyleG7710::~WatchFaceCasioStyleG7710() {
     lv_font_free(font_segment40);
   }
 
-  if (font_segment115 != nullptr) {
-    lv_font_free(font_segment115);
+  if (font_segment95 != nullptr) {
+    lv_font_free(font_segment95);
   }
+
+  // if (font_segment115 != nullptr) {
+  //   lv_font_free(font_segment115);
+  // }
 
   lv_obj_clean(lv_scr_act());
 }
@@ -222,10 +236,11 @@ void WatchFaceCasioStyleG7710::Refresh() {
     lv_label_set_text_static(notificationIcon, NotificationIcon::GetIcon(notificationState.Get()));
   }
 
-  currentDateTime = std::chrono::time_point_cast<std::chrono::minutes>(dateTimeController.CurrentDateTime());
+  currentDateTime = std::chrono::time_point_cast<std::chrono::seconds>(dateTimeController.CurrentDateTime());
   if (currentDateTime.IsUpdated()) {
     uint8_t hour = dateTimeController.Hours();
     uint8_t minute = dateTimeController.Minutes();
+    uint8_t second = dateTimeController.Seconds();
 
     if (settingsController.GetClockType() == Controllers::Settings::ClockType::H12) {
       char ampmChar[2] = "A";
@@ -243,6 +258,8 @@ void WatchFaceCasioStyleG7710::Refresh() {
       lv_label_set_text_fmt(label_time, "%02d:%02d", hour, minute);
     }
     lv_obj_realign(label_time);
+    lv_label_set_text_fmt(label_seconds, "%02d", second);
+    lv_obj_realign(label_seconds);
 
     currentDate = std::chrono::time_point_cast<days>(currentDateTime.Get());
     if (currentDate.IsUpdated()) {
@@ -324,8 +341,13 @@ bool WatchFaceCasioStyleG7710::IsAvailable(Pinetime::Controllers::FS& filesystem
     return false;
   }
 
+  // filesystem.FileClose(&file);
+  // if (filesystem.FileOpen(&file, "/fonts/7segments_115.bin", LFS_O_RDONLY) < 0) {
+  //   return false;
+  // }
+
   filesystem.FileClose(&file);
-  if (filesystem.FileOpen(&file, "/fonts/7segments_115.bin", LFS_O_RDONLY) < 0) {
+  if (filesystem.FileOpen(&file, "/fonts/7segments_95.bin", LFS_O_RDONLY) < 0) {
     return false;
   }
 

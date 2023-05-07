@@ -44,7 +44,7 @@ namespace Pinetime {
         Utility::DirtyValue<bool> powerPresent {};
         Utility::DirtyValue<bool> bleState {};
         Utility::DirtyValue<bool> bleRadioEnabled {};
-        Utility::DirtyValue<std::chrono::time_point<std::chrono::system_clock, std::chrono::minutes>> currentDateTime {};
+        Utility::DirtyValue<std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds>> currentDateTime {};
         Utility::DirtyValue<uint32_t> stepCount {};
         Utility::DirtyValue<uint8_t> heartbeat {};
         Utility::DirtyValue<bool> heartbeatRunning {};
@@ -58,7 +58,7 @@ namespace Pinetime {
         lv_point_t line_date_points[3] {{0, 5}, {135, 5}, {140, 0}};
         lv_point_t line_time_points[3] {{0, 0}, {230, 0}, {235, 5}};
 
-        lv_color_t color_text = lv_color_hex(0x98B69A);
+        lv_color_t color_text = lv_color_hex(0xDFFFE1);
 
         lv_style_t style_line;
         lv_style_t style_border;
@@ -66,6 +66,7 @@ namespace Pinetime {
         lv_obj_t* label_time;
         lv_obj_t* line_time;
         lv_obj_t* label_time_ampm;
+        lv_obj_t* label_seconds;
         lv_obj_t* label_date;
         lv_obj_t* line_date;
         lv_obj_t* label_day_of_week;
@@ -97,7 +98,8 @@ namespace Pinetime {
         lv_task_t* taskRefresh;
         lv_font_t* font_dot40 = nullptr;
         lv_font_t* font_segment40 = nullptr;
-        lv_font_t* font_segment115 = nullptr;
+        lv_font_t* font_segment95 = nullptr;
+        // lv_font_t* font_segment115 = nullptr;
       };
     }
   }

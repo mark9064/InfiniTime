@@ -47,6 +47,18 @@
       "format": "bin",
       "target_path": "/fonts/"
    },
+   "7segments_95" : {
+      "sources": [
+         {
+            "file": "fonts/7segment.woff",
+            "symbols": "0123456789: -"
+         }
+      ],
+      "bpp": 1,
+      "size": 95,
+      "format": "bin",
+      "target_path": "/fonts/"
+   },
    "7segments_115" : {
       "sources": [
          {
