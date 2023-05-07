@@ -212,6 +212,10 @@ void SystemTask::Work() {
           }
 
           state = SystemTaskState::Running;
+          if (sendChimeAfterWake) {
+            displayApp.PushMessage(Pinetime::Applications::Display::Messages::Chime);
+            sendChimeAfterWake = false;
+          }
           break;
         case Messages::TouchWakeUp: {
           if (touchHandler.ProcessTouchInfo(touchPanel.GetTouchInfo())) {
@@ -340,8 +344,8 @@ void SystemTask::Work() {
               settingsController.GetChimeOption() == Controllers::Settings::ChimesOption::Hours &&
               alarmController.State() != AlarmController::AlarmState::Alerting) {
             if (state == SystemTaskState::Sleeping) {
+              sendChimeAfterWake = true;
               GoToRunning();
-              displayApp.PushMessage(Pinetime::Applications::Display::Messages::Chime);
             }
           }
           break;
@@ -351,8 +355,8 @@ void SystemTask::Work() {
               settingsController.GetChimeOption() == Controllers::Settings::ChimesOption::HalfHours &&
               alarmController.State() != AlarmController::AlarmState::Alerting) {
             if (state == SystemTaskState::Sleeping) {
+              sendChimeAfterWake = true;
               GoToRunning();
-              displayApp.PushMessage(Pinetime::Applications::Display::Messages::Chime);
             }
           }
           break;

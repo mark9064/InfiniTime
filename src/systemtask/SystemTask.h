@@ -128,6 +128,7 @@ namespace Pinetime {
       uint8_t bleDiscoveryTimer = 0;
       TimerHandle_t measureBatteryTimer;
       bool doNotGoToSleep = false;
+      bool sendChimeAfterWake = false;
       SystemTaskState state = SystemTaskState::Running;
 
       void HandleButtonAction(Controllers::ButtonActions action);
