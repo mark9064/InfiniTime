@@ -38,10 +38,15 @@ void Settings::LoadSettingsFromFile() {
 
 void Settings::SaveSettingsToFile() {
   lfs_file_t settingsFile;
+  auto prevFace = settings.watchFace;
 
   if (fs.FileOpen(&settingsFile, "/settings.dat", LFS_O_WRONLY | LFS_O_CREAT) != LFS_ERR_OK) {
     return;
   }
+  if (prevFace == Pinetime::Applications::WatchFace::CasioStyleG7710) {
+    settings.watchFace = Pinetime::Applications::WatchFace::Digital;
+  }
   fs.FileWrite(&settingsFile, reinterpret_cast<uint8_t*>(&settings), sizeof(settings));
   fs.FileClose(&settingsFile);
+  settings.watchFace = prevFace;
 }
