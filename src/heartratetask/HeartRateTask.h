@@ -1,10 +1,11 @@
 #pragma once
 #include <FreeRTOS.h>
-#include <task.h>
-#include <queue.h>
 #include <components/heartrate/Ppg.h>
+#include <queue.h>
+#include <task.h>
 
-#define DURATION_BETWEEN_BACKGROUND_MEASUREMENTS 5 * 60 * 1000 // 5 Minutes assuming 1 Hz
+#define DURATION_BETWEEN_BACKGROUND_MEASUREMENTS pdMS_TO_TICKS(5 * 60 * 1000) // 5 Minutes
+#define BACKGROUND_MEASUREMENT_DURATION          pdMS_TO_TICKS(15000)         // 15 seconds
 
 namespace Pinetime {
   namespace Drivers {
@@ -19,7 +20,7 @@ namespace Pinetime {
     class HeartRateTask {
     public:
       enum class Messages : uint8_t { GoToSleep, WakeUp, StartMeasurement, StopMeasurement };
-      enum class States { Idle, Running, Measuring, BackgroundWaiting, BackgroundMeasuring };
+      enum class States { Stopped, BackgroundWaiting, Measuring, BackgroundMeasuring };
 
       explicit HeartRateTask(Drivers::Hrs3300& heartRateSensor, Controllers::HeartRateController& controller);
       void Start();
@@ -37,11 +38,12 @@ namespace Pinetime {
 
       TaskHandle_t taskHandle;
       QueueHandle_t messageQueue;
-      States state = States::Running;
+      States state = States::Stopped;
       Drivers::Hrs3300& heartRateSensor;
       Controllers::HeartRateController& controller;
       Controllers::Ppg ppg;
       TickType_t backgroundMeasurementWaitingStart = 0;
+      TickType_t ppgStartTime = 0;
     };
 
   }

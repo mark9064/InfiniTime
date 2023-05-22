@@ -1,6 +1,6 @@
 #include "heartratetask/HeartRateTask.h"
-#include <drivers/Hrs3300.h>
 #include <components/heartrate/HeartRateController.h>
+#include <drivers/Hrs3300.h>
 #include <nrf_log.h>
 
 using namespace Pinetime::Applications;
@@ -13,7 +13,7 @@ void HeartRateTask::Start() {
   messageQueue = xQueueCreate(10, 1);
   controller.SetHeartRateTask(this);
 
-  if (pdPASS != xTaskCreate(HeartRateTask::Process, "Heartrate", 500, this, 0, &taskHandle)) {
+  if (!xTaskCreate(HeartRateTask::Process, "HRM", 500, this, 0, &taskHandle)) {
     APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
   }
 }
@@ -30,20 +30,23 @@ void HeartRateTask::Work() {
     auto delay = CurrentTaskDelay();
     Messages msg;
 
-    if (xQueueReceive(messageQueue, &msg, delay) == pdTRUE) {
+    if (xQueueReceive(messageQueue, &msg, delay)) {
       switch (msg) {
         case Messages::GoToSleep:
-          if (state == States::Running) {
-            state = States::Idle;
-          } else if (state == States::Measuring) {
-            state = States::BackgroundWaiting;
-            StopMeasurement();
+          if (state == States::Measuring) {
+            // if a background measurement is due, keep PPG on
+            // if the PPG has already been running for long enough, measurement will stop on the next HandleSensorData call
+            if (xTaskGetTickCount() - backgroundMeasurementWaitingStart >= DURATION_BETWEEN_BACKGROUND_MEASUREMENTS) {
+              state = States::BackgroundMeasuring;
+            } else {
+              state = States::BackgroundWaiting;
+              StopMeasurement();
+              lastBpm = 0;
+            }
           }
           break;
         case Messages::WakeUp:
-          if (state == States::Idle) {
-            state = States::Running;
-          } else if (state == States::BackgroundMeasuring) {
+          if (state == States::BackgroundMeasuring) {
             state = States::Measuring;
           } else if (state == States::BackgroundWaiting) {
             state = States::Measuring;
@@ -51,23 +54,19 @@ void HeartRateTask::Work() {
           }
           break;
         case Messages::StartMeasurement:
-          if (state == States::Measuring || state == States::BackgroundMeasuring) {
+          if (state == States::Measuring) {
             break;
           }
           state = States::Measuring;
-          lastBpm = 0;
           StartMeasurement();
           break;
         case Messages::StopMeasurement:
-          if (state == States::Running || state == States::Idle) {
+          if (state == States::Stopped) {
             break;
           }
-          if (state == States::Measuring) {
-            state = States::Running;
-          } else if (state == States::BackgroundMeasuring) {
-            state = States::Idle;
-          }
+          state = States::Stopped;
           StopMeasurement();
+          lastBpm = 0;
           break;
       }
     }
@@ -85,7 +84,7 @@ void HeartRateTask::PushMessage(HeartRateTask::Messages msg) {
   xQueueSendFromISR(messageQueue, &msg, &xHigherPriorityTaskWoken);
   if (xHigherPriorityTaskWoken) {
     /* Actual macro used here is port specific. */
-    // TODO : should I do something here?
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   }
 }
 
@@ -93,6 +92,7 @@ void HeartRateTask::StartMeasurement() {
   heartRateSensor.Enable();
   ppg.Reset(true);
   vTaskDelay(100);
+  ppgStartTime = xTaskGetTickCount();
 }
 
 void HeartRateTask::StopMeasurement() {
@@ -116,38 +116,47 @@ void HeartRateTask::HandleSensorData(int* lastBpm) {
   if (ambient > 0) {
     // Reset all DAQ buffers
     ppg.Reset(true);
+    *lastBpm = 0;
+    bpm = 0;
   } else if (bpm < 0) {
     // Reset all DAQ buffers except HRS buffer
     ppg.Reset(false);
     // Set HR to zero and update
     bpm = 0;
+    controller.Update(Controllers::HeartRateController::States::Running, bpm);
   }
 
-  if (*lastBpm == 0 && bpm == 0) {
+  // only works transiently as ALS trigger will always double the threshold
+  if (ambient > 0) {
+    controller.Update(Controllers::HeartRateController::States::NoTouch, bpm);
+  } else if (*lastBpm == 0 && bpm == 0) {
     controller.Update(Controllers::HeartRateController::States::NotEnoughData, bpm);
   }
 
   if (bpm != 0) {
     *lastBpm = bpm;
     controller.Update(Controllers::HeartRateController::States::Running, bpm);
-    if (state == States::BackgroundMeasuring) {
-      StopMeasurement();
-      state = States::BackgroundWaiting;
-      backgroundMeasurementWaitingStart = xTaskGetTickCount();
-    }
+    // set measurement timer forward
+    // only effective when not background measuring, as background measuring always sets this when it finishes
+    backgroundMeasurementWaitingStart = xTaskGetTickCount();
+  }
+  // if measurement has been running for more than the background measurement period, stop
+  if (state == States::BackgroundMeasuring && xTaskGetTickCount() - ppgStartTime > BACKGROUND_MEASUREMENT_DURATION) {
+    backgroundMeasurementWaitingStart = xTaskGetTickCount();
+    StopMeasurement();
+    *lastBpm = 0;
+    state = States::BackgroundWaiting;
   }
 }
 
 int HeartRateTask::CurrentTaskDelay() {
-    switch (state) {
-      case States::Measuring:
-      case States::BackgroundMeasuring:
-        return ppg.deltaTms;
-      case States::Running:
-        return 100;
-      case States::BackgroundWaiting:
-        return 10000;
-      default:
-        return portMAX_DELAY;
-    }
+  switch (state) {
+    case States::Measuring:
+    case States::BackgroundMeasuring:
+      return ppg.deltaTms;
+    case States::BackgroundWaiting:
+      return 10000;
+    default:
+      return portMAX_DELAY;
+  }
 }
