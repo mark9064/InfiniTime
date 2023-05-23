@@ -1,6 +1,6 @@
 #include "displayapp/screens/HeartRate.h"
-#include <lvgl/lvgl.h>
 #include <components/heartrate/HeartRateController.h>
+#include <lvgl/lvgl.h>
 
 #include "displayapp/DisplayApp.h"
 #include "displayapp/InfiniTimeTheme.h"
@@ -25,6 +25,10 @@ namespace {
   void btnStartStopEventHandler(lv_obj_t* obj, lv_event_t event) {
     auto* screen = static_cast<HeartRate*>(obj->user_data);
     screen->OnStartStopEvent(event);
+  }
+  void btnRunModeEventHandler(lv_obj_t* obj, lv_event_t event) {
+    auto* screen = static_cast<HeartRate*>(obj->user_data);
+    screen->OnRunModeEvent(event);
   }
 }
 
@@ -56,15 +60,24 @@ HeartRate::HeartRate(Controllers::HeartRateController& heartRateController, Syst
 
   btn_startStop = lv_btn_create(lv_scr_act(), nullptr);
   btn_startStop->user_data = this;
-  lv_obj_set_height(btn_startStop, 50);
+  lv_obj_set_height(btn_startStop, 60);
   lv_obj_set_event_cb(btn_startStop, btnStartStopEventHandler);
-  lv_obj_align(btn_startStop, nullptr, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
+  lv_obj_align(btn_startStop, nullptr, LV_ALIGN_IN_BOTTOM_LEFT, 0, 0);
 
   label_startStop = lv_label_create(btn_startStop, nullptr);
   UpdateStartStopButton(isHrRunning);
   if (isHrRunning) {
     systemTask.PushMessage(Pinetime::System::Messages::DisableSleeping);
   }
+
+  btn_runMode = lv_btn_create(lv_scr_act(), nullptr);
+  btn_runMode->user_data = this;
+  lv_obj_set_height(btn_runMode, 60);
+  lv_obj_set_event_cb(btn_runMode, btnRunModeEventHandler);
+  lv_obj_align(btn_runMode, nullptr, LV_ALIGN_IN_BOTTOM_RIGHT, 0, 0);
+
+  label_runMode = lv_label_create(btn_runMode, nullptr);
+  UpdateRunModeButton();
 
   taskRefresh = lv_task_create(RefreshTaskCallback, 100, LV_TASK_PRIO_MID, this);
 }
@@ -113,5 +126,39 @@ void HeartRate::UpdateStartStopButton(bool isRunning) {
     lv_label_set_text_static(label_startStop, "Stop");
   } else {
     lv_label_set_text_static(label_startStop, "Start");
+  }
+}
+
+void HeartRate::OnRunModeEvent(lv_event_t event) {
+  if (event == LV_EVENT_CLICKED) {
+    auto mode = heartRateController.RunMode();
+    // this should just be mode + 1 % 3 but my c++-fu is not up to scratch
+    switch (mode) {
+      case Controllers::HeartRateController::RunModes::NoBackground:
+        heartRateController.SetMode(Controllers::HeartRateController::RunModes::Periodic);
+        break;
+      case Controllers::HeartRateController::RunModes::Periodic:
+        heartRateController.SetMode(Controllers::HeartRateController::RunModes::Continuous);
+        break;
+      case Controllers::HeartRateController::RunModes::Continuous:
+        heartRateController.SetMode(Controllers::HeartRateController::RunModes::NoBackground);
+        break;
+    }
+    UpdateRunModeButton();
+  }
+}
+
+void HeartRate::UpdateRunModeButton() {
+  auto mode = heartRateController.RunMode();
+  switch (mode) {
+    case Controllers::HeartRateController::RunModes::NoBackground:
+      lv_label_set_text_static(label_runMode, "NoBackgr");
+      break;
+    case Controllers::HeartRateController::RunModes::Periodic:
+      lv_label_set_text_static(label_runMode, "Periodic");
+      break;
+    case Controllers::HeartRateController::RunModes::Continuous:
+      lv_label_set_text_static(label_runMode, "Continuo");
+      break;
   }
 }

@@ -33,22 +33,34 @@ void HeartRateTask::Work() {
     if (xQueueReceive(messageQueue, &msg, delay)) {
       switch (msg) {
         case Messages::GoToSleep:
+          if (mode == Modes::Continuous) {
+            break;
+          }
           if (state == States::Measuring) {
-            // if a background measurement is due, keep PPG on
-            // if the PPG has already been running for long enough, measurement will stop on the next HandleSensorData call
-            if (xTaskGetTickCount() - backgroundMeasurementWaitingStart >= DURATION_BETWEEN_BACKGROUND_MEASUREMENTS) {
-              state = States::BackgroundMeasuring;
-            } else {
-              state = States::BackgroundWaiting;
+            if (mode == Modes::Periodic) {
+              // if a background measurement is due, keep PPG on
+              // if the PPG has already been running for long enough, measurement will stop on the next HandleSensorData call
+              if (xTaskGetTickCount() - backgroundMeasurementWaitingStart >= DURATION_BETWEEN_BACKGROUND_MEASUREMENTS) {
+                state = States::BackgroundMeasuring;
+              } else {
+                state = States::Idle;
+                StopMeasurement();
+                lastBpm = 0;
+              }
+            } else if (mode == Modes::NoBackground) {
+              state = States::Idle;
               StopMeasurement();
               lastBpm = 0;
             }
           }
           break;
         case Messages::WakeUp:
+          if (mode == Modes::Continuous) {
+            break;
+          }
           if (state == States::BackgroundMeasuring) {
             state = States::Measuring;
-          } else if (state == States::BackgroundWaiting) {
+          } else if (state == States::Idle) {
             state = States::Measuring;
             StartMeasurement();
           }
@@ -68,10 +80,24 @@ void HeartRateTask::Work() {
           StopMeasurement();
           lastBpm = 0;
           break;
+        case Messages::ChangeMode:
+          auto contMode = controller.RunMode();
+          switch (contMode) {
+            case Controllers::HeartRateController::RunModes::NoBackground:
+              mode = Modes::NoBackground;
+              break;
+            case Controllers::HeartRateController::RunModes::Periodic:
+              backgroundMeasurementWaitingStart = xTaskGetTickCount();
+              mode = Modes::Periodic;
+              break;
+            case Controllers::HeartRateController::RunModes::Continuous:
+              mode = Modes::Continuous;
+              break;
+          }
       }
     }
 
-    if (state == States::BackgroundWaiting) {
+    if (state == States::Idle && mode == Modes::Periodic) {
       HandleBackgroundWaiting();
     } else if (state == States::BackgroundMeasuring || state == States::Measuring) {
       HandleSensorData(&lastBpm);
@@ -145,7 +171,7 @@ void HeartRateTask::HandleSensorData(int* lastBpm) {
     backgroundMeasurementWaitingStart = xTaskGetTickCount();
     StopMeasurement();
     *lastBpm = 0;
-    state = States::BackgroundWaiting;
+    state = States::Idle;
   }
 }
 
@@ -154,7 +180,7 @@ int HeartRateTask::CurrentTaskDelay() {
     case States::Measuring:
     case States::BackgroundMeasuring:
       return ppg.deltaTms;
-    case States::BackgroundWaiting:
+    case States::Idle:
       return 10000;
     default:
       return portMAX_DELAY;

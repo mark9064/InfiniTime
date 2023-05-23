@@ -26,6 +26,13 @@ void HeartRateController::Stop() {
   }
 }
 
+void HeartRateController::SetMode(enum RunModes mode) {
+  if (task != nullptr) {
+    runMode = mode;
+    task->PushMessage(Pinetime::Applications::HeartRateTask::Messages::ChangeMode);
+  }
+}
+
 void HeartRateController::SetHeartRateTask(Pinetime::Applications::HeartRateTask* task) {
   this->task = task;
 }
