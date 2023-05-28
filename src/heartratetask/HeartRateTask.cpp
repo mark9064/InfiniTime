@@ -135,7 +135,9 @@ void HeartRateTask::HandleBackgroundWaiting() {
 }
 
 void HeartRateTask::HandleSensorData(int* lastBpm) {
-  int8_t ambient = ppg.Preprocess(heartRateSensor.ReadHrs(), heartRateSensor.ReadAls());
+  auto hrs = heartRateSensor.ReadHrs();
+  auto als = heartRateSensor.ReadAls();
+  int8_t ambient = ppg.Preprocess(hrs, als);
   int bpm = ppg.HeartRate();
 
   // If ambient light detected or a reset requested (bpm < 0)
@@ -151,7 +153,7 @@ void HeartRateTask::HandleSensorData(int* lastBpm) {
     bpm = 0;
     controller.Update(Controllers::HeartRateController::States::Running, bpm);
   }
-
+  controller.UpdatePPG(hrs, als);
   // only works transiently as ALS trigger will always double the threshold
   if (ambient > 0) {
     controller.Update(Controllers::HeartRateController::States::NoTouch, bpm);

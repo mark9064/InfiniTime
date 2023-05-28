@@ -12,6 +12,10 @@ void HeartRateController::Update(HeartRateController::States newState, uint8_t h
   }
 }
 
+void HeartRateController::UpdatePPG(uint32_t hrs, uint32_t als) {
+  ppgService->OnNewPPGValue(hrs, als);
+}
+
 void HeartRateController::Start() {
   if (task != nullptr) {
     state = States::NotEnoughData;
@@ -39,4 +43,8 @@ void HeartRateController::SetHeartRateTask(Pinetime::Applications::HeartRateTask
 
 void HeartRateController::SetService(Pinetime::Controllers::HeartRateService* service) {
   this->service = service;
+}
+
+void HeartRateController::SetPPGService(Pinetime::Controllers::PPGService* service) {
+  this->ppgService = service;
 }

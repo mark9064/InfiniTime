@@ -2,6 +2,8 @@
 
 #include <cstdint>
 #include <components/ble/HeartRateService.h>
+#include <components/ble/PPGService.h>
+
 
 namespace Pinetime {
   namespace Applications {
@@ -23,6 +25,8 @@ namespace Pinetime {
       void Stop();
       void Update(States newState, uint8_t heartRate);
 
+      void UpdatePPG(uint32_t hrs, uint32_t als);
+
       void SetHeartRateTask(Applications::HeartRateTask* task);
 
       void SetMode(enum RunModes mode);
@@ -40,6 +44,7 @@ namespace Pinetime {
       }
 
       void SetService(Pinetime::Controllers::HeartRateService* service);
+      void SetPPGService(Pinetime::Controllers::PPGService* service);
 
     private:
       Applications::HeartRateTask* task = nullptr;
@@ -47,6 +52,7 @@ namespace Pinetime {
       RunModes runMode = RunModes::NoBackground;
       uint8_t heartRate = 0;
       Pinetime::Controllers::HeartRateService* service = nullptr;
+      Pinetime::Controllers::PPGService* ppgService = nullptr;
     };
   }
 }
