@@ -39,6 +39,7 @@ namespace Pinetime {
 
       void HardwareReset();
       void SoftwareReset();
+      void Command2Enable();
       void SleepOut();
       void EnsureSleepOutPostDelay();
       void SleepIn();
@@ -51,6 +52,7 @@ namespace Pinetime {
       void IdleModeOff();
       void DisplayOn();
       void DisplayOff();
+      void PowerControl();
 
       void SetAddrWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
       void SetVdv();
@@ -77,6 +79,9 @@ namespace Pinetime {
         IdleModeOn = 0x39,
         ColMod = 0x3a,
         VdvSet = 0xc4,
+        Command2Enable = 0xdf,
+        PowerControl1 = 0xd0,
+        PowerControl2 = 0xe8,
       };
       void WriteData(uint8_t data);
       void ColumnAddressSet();
