@@ -26,6 +26,7 @@ void St7789::Init() {
   IdleFrameRateOff();
   NormalModeOn();
   SetVdv();
+  PowerControl();
   DisplayOn();
 }
 
@@ -206,6 +207,18 @@ void St7789::IdleFrameRateOff() {
 
 void St7789::DisplayOn() {
   WriteCommand(static_cast<uint8_t>(Commands::DisplayOn));
+}
+
+void St7789::PowerControl() {
+  WriteCommand(static_cast<uint8_t>(Commands::PowerControl1));
+  // Constant
+  WriteData(0xa4);
+  // Lowest possible voltages
+  WriteData(0x00);
+
+  WriteCommand(static_cast<uint8_t>(Commands::PowerControl2));
+  // Lowest possible boost circuit clocks
+  WriteData(0xb3);
 }
 
 void St7789::SetAddrWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1) {
