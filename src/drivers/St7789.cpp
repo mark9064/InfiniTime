@@ -21,6 +21,9 @@ void St7789::Init() {
 #ifndef DRIVER_DISPLAY_MIRROR
   DisplayInversionOn();
 #endif
+  PorchSet();
+  FrameRateNormalSet();
+  IdleFrameRateOff();
   NormalModeOn();
   SetVdv();
   PowerControl();
@@ -151,28 +154,49 @@ void St7789::NormalModeOn() {
   WriteCommand(static_cast<uint8_t>(Commands::NormalModeOn));
 }
 
-void St7789::FrameRateLow() {
-  WriteCommand(static_cast<uint8_t>(Commands::FrameRate));
-  // Enable frame rate control for partial/idle mode, 8x frame divider
-  // According to the datasheet, these controls should apply only to partial/idle mode
-  // However they appear to apply to normal mode, so we have to enable/disable
-  // every time we enter/exit always on
-  // In testing this divider appears to actually be 16x?
-  WriteData(0x13);
-  // Idle mode frame rate (lowest possible)
-  WriteData(0x1f);
-  // Partial mode frame rate (lowest possible, unused)
-  WriteData(0x1f);
+void St7789::PorchSet() {
+  WriteCommand(static_cast<uint8_t>(Commands::Porch));
+  // Normal mode front porch
+  WriteData(0x02);
+  // Normal mode back porch
+  WriteData(0x03);
+  // Porch control enable
+  WriteData(0x01);
+  // Idle mode front:back porch
+  WriteData(0xed);
+  // Partial mode front:back porch (partial mode unused but set anyway)
+  WriteData(0xed);
 }
 
-void St7789::FrameRateNormal() {
-  WriteCommand(static_cast<uint8_t>(Commands::FrameRate));
-  // Disable frame rate control and divider
-  WriteData(0x00);
-  // Idle mode frame rate (normal)
-  WriteData(0x0f);
-  // Partial mode frame rate (normal, unused)
-  WriteData(0x0f);
+void St7789::FrameRateNormalSet() {
+  WriteCommand(static_cast<uint8_t>(Commands::FrameRateNormal));
+  // Note that datasheet table inaccurate - see formula below table
+  WriteData(0x0a);
+}
+
+void St7789::IdleFrameRateOn() {
+  WriteCommand(static_cast<uint8_t>(Commands::FrameRateNormal));
+  // Note that datasheet table inaccurate - see formula below table
+  WriteData(0x1e);
+
+
+  WriteCommand(static_cast<uint8_t>(Commands::Porch));
+  // Normal mode front porch
+  WriteData(0x36);
+  // Normal mode back porch
+  WriteData(0x36);
+  // Porch control enable
+  WriteData(0x01);
+  // Idle mode front:back porch
+  WriteData(0xed);
+  // Partial mode front:back porch (partial mode unused but set anyway)
+  WriteData(0xed);
+}
+
+void St7789::IdleFrameRateOff() {
+  FrameRateNormalSet();
+
+  PorchSet();
 }
 
 void St7789::DisplayOn() {
@@ -254,12 +278,12 @@ void St7789::HardwareReset() {
 }
 
 void St7789::LowPowerOn() {
-  FrameRateLow();
+  IdleFrameRateOn();
   NRF_LOG_INFO("[LCD] Low power mode");
 }
 
 void St7789::LowPowerOff() {
-  FrameRateNormal();
+  IdleFrameRateOff();
   NRF_LOG_INFO("[LCD] Normal power mode");
 }
 
