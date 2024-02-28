@@ -130,7 +130,7 @@ void BrightnessController::Set(BrightnessController::Levels level) {
       applyBrightness(1000);
       break;
     case Levels::AlwaysOn:
-      applyBrightness(0);
+      applyBrightness(100);
       break;
     case Levels::Off:
       applyBrightness(0);
