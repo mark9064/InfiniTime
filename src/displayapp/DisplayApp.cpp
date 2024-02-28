@@ -234,21 +234,22 @@ void DisplayApp::Refresh() {
   switch (state) {
     case States::Idle:
       if (settingsController.GetAlwaysOnDisplay()) {
-        if (!currentScreen->IsRunning()) {
-          LoadPreviousScreen();
-        }
-        // Check we've slept long enough
-        // Might not be true if the loop received an event
-        // If not true, then wait that amount of time
-        queueTimeout = CalculateSleepTime();
-        if (queueTimeout == 0) {
-          lv_task_handler();
-          // Drop frames that we've missed if the loop took way longer than expected to execute
-          while (queueTimeout == 0) {
-            alwaysOnTickCount += 1;
-            queueTimeout = CalculateSleepTime();
-          }
-        }
+        // if (!currentScreen->IsRunning()) {
+        //   LoadPreviousScreen();
+        // }
+        // // Check we've slept long enough
+        // // Might not be true if the loop received an event
+        // // If not true, then wait that amount of time
+        // queueTimeout = CalculateSleepTime();
+        // if (queueTimeout == 0) {
+        //   lv_task_handler();
+        //   // Drop frames that we've missed if the loop took way longer than expected to execute
+        //   while (queueTimeout == 0) {
+        //     alwaysOnTickCount += 1;
+        //     queueTimeout = CalculateSleepTime();
+        //   }
+        // }
+        queueTimeout = portMAX_DELAY;
       } else {
         queueTimeout = portMAX_DELAY;
       }
@@ -290,10 +291,11 @@ void DisplayApp::Refresh() {
         // Don't actually turn off the display for AlwaysOn mode
         if (settingsController.GetAlwaysOnDisplay()) {
           brightnessController.Set(Controllers::BrightnessController::Levels::AlwaysOn);
-          lcd.LowPowerOn();
+          // lcd.LowPowerOn();
           // Record idle entry time
           alwaysOnTickCount = 0;
           alwaysOnStartTime = xTaskGetTickCount();
+          lcd.Sleep();
         } else {
           brightnessController.Set(Controllers::BrightnessController::Levels::Off);
           lcd.Sleep();
@@ -306,7 +308,8 @@ void DisplayApp::Refresh() {
         break;
       case Messages::GoToRunning:
         if (settingsController.GetAlwaysOnDisplay()) {
-          lcd.LowPowerOff();
+          // lcd.LowPowerOff();
+          lcd.Wakeup();
         } else {
           lcd.Wakeup();
         }
