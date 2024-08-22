@@ -314,6 +314,10 @@ void DisplayApp::Refresh() {
         } else {
           lcd.Sleep();
         }
+        // Clear any ongoing touch pressed events
+        // Without this LVGL gets stuck in the pressed state and will keep refreshing the
+        // display activity timer causing the screen to never sleep after timeout
+        lvgl.ClearTouchState();
         PushMessageToSystemTask(Pinetime::System::Messages::OnDisplayTaskSleeping);
         state = States::Idle;
         break;
