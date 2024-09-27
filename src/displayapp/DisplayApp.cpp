@@ -463,7 +463,7 @@ void DisplayApp::Refresh() {
     }
   }
 
-  if (touchHandler.IsTouching()) {
+  if (state == States::Running && touchHandler.IsTouching()) {
     currentScreen->OnTouchEvent(touchHandler.GetX(), touchHandler.GetY());
   }
 
