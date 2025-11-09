@@ -6,6 +6,7 @@
 #undef min
 
 #include "components/fs/FS.h"
+#include "components/ble/filedelegationtask/FileDelegationTask.h"
 
 namespace Pinetime {
   namespace System {
@@ -19,7 +20,9 @@ namespace Pinetime {
 
     class FSService {
     public:
-      FSService(Pinetime::System::SystemTask& systemTask, Pinetime::Controllers::FS& fs);
+      FSService(Pinetime::System::SystemTask& systemTask,
+                Pinetime::Controllers::FS& fs,
+                Pinetime::Controllers::FileDelegationTask& fileDelegation);
       void Init();
 
       int OnFSServiceRequested(uint16_t connectionHandle, uint16_t attributeHandle, ble_gatt_access_ctxt* context);
@@ -28,6 +31,7 @@ namespace Pinetime {
     private:
       Pinetime::System::SystemTask& systemTask;
       Pinetime::Controllers::FS& fs;
+      Pinetime::Controllers::FileDelegationTask& fileDelegation;
 
       static constexpr const char denyAlert[] = "InfiniTime\0File access attempted, but disabled in settings.";
       static constexpr const uint8_t denyAlertLength = sizeof(denyAlert); // for this to work denyAlert MUST be array
@@ -59,6 +63,7 @@ namespace Pinetime {
         READ = 0x10,
         READ_DATA = 0x11,
         READ_PACING = 0x12,
+        READ_BIN = 0x13,
         WRITE = 0x20,
         WRITE_PACING = 0x21,
         WRITE_DATA = 0x22,

@@ -253,13 +253,13 @@ void SystemTask::Work() {
           break;
         case Messages::StartFileTransfer:
           NRF_LOG_INFO("[systemtask] FS Started");
-          GoToRunning();
-          wakeLocksHeld++;
+          // GoToRunning();
+          // wakeLocksHeld++;
           // TODO add intent of fs access icon or something
           break;
         case Messages::StopFileTransfer:
           NRF_LOG_INFO("[systemtask] FS Stopped");
-          wakeLocksHeld--;
+          // wakeLocksHeld--;
           // TODO add intent of fs access icon or something
           break;
         case Messages::OnTouchEvent:
@@ -313,12 +313,12 @@ void SystemTask::Work() {
 
           // Must keep SPI and flash awake when still updating the display for always on
           if (msg == Messages::OnDisplayTaskSleeping) {
-            if (BootloaderVersion::IsValid()) {
-              // First versions of the bootloader do not expose their version and cannot initialize the SPI NOR FLASH
-              // if it's in sleep mode. Avoid bricked device by disabling sleep mode on these versions.
-              spiNorFlash.Sleep();
-            }
-            spi.Sleep();
+            // if (BootloaderVersion::IsValid()) {
+            //   // First versions of the bootloader do not expose their version and cannot initialize the SPI NOR FLASH
+            //   // if it's in sleep mode. Avoid bricked device by disabling sleep mode on these versions.
+            //   spiNorFlash.Sleep();
+            // }
+            // spi.Sleep();
           }
 
           // Double Tap needs the touch screen to be in normal mode
@@ -408,8 +408,8 @@ void SystemTask::GoToRunning() {
   if (state == SystemTaskState::Sleeping || state == SystemTaskState::AODSleeping) {
     // SPI only switched off when entering Sleeping, not AOD or GoingToSleep
     if (state == SystemTaskState::Sleeping) {
-      spi.Wakeup();
-      spiNorFlash.Wakeup();
+      // spi.Wakeup();
+      // spiNorFlash.Wakeup();
     }
 
     // Double Tap needs the touch screen to be in normal mode
