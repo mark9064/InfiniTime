@@ -48,7 +48,9 @@ NimbleController::NimbleController(Pinetime::System::SystemTask& systemTask,
     immediateAlertService {systemTask, notificationManager},
     heartRateService {*this, heartRateController},
     motionService {*this, motionController},
-    fsService {systemTask, fs},
+    fileDelegation {fs, heartRateController},
+    fsService {systemTask, fs, fileDelegation},
+    ppgService {*this, heartRateController},
     serviceDiscovery({&currentTimeClient, &alertNotificationClient}) {
 }
 
@@ -97,7 +99,9 @@ void NimbleController::Init() {
   immediateAlertService.Init();
   heartRateService.Init();
   motionService.Init();
+  fileDelegation.Start();
   fsService.Init();
+  ppgService.Init();
 
   int rc;
   rc = ble_hs_util_ensure_addr(0);
@@ -325,12 +329,15 @@ int NimbleController::OnGAPEvent(ble_gap_event* event) {
       if (event->subscribe.reason == BLE_GAP_SUBSCRIBE_REASON_TERM) {
         heartRateService.UnsubscribeNotification(event->subscribe.attr_handle);
         motionService.UnsubscribeNotification(event->subscribe.attr_handle);
+        ppgService.UnsubscribeNotification(event->subscribe.attr_handle);
       } else if (event->subscribe.prev_notify == 0 && event->subscribe.cur_notify == 1) {
         heartRateService.SubscribeNotification(event->subscribe.attr_handle);
         motionService.SubscribeNotification(event->subscribe.attr_handle);
+        ppgService.SubscribeNotification(event->subscribe.attr_handle);
       } else if (event->subscribe.prev_notify == 1 && event->subscribe.cur_notify == 0) {
         heartRateService.UnsubscribeNotification(event->subscribe.attr_handle);
         motionService.UnsubscribeNotification(event->subscribe.attr_handle);
+        ppgService.UnsubscribeNotification(event->subscribe.attr_handle);
       }
       break;
 

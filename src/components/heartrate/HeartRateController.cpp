@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "heartratetask/HeartRateTask.h"
+#include "components/ble/filedelegationtask/FileDelegationTask.h"
 
 using namespace Pinetime::Controllers;
 
@@ -14,6 +15,14 @@ void HeartRateController::UpdateHeartRate(uint8_t heartRate) {
     this->heartRate = heartRate;
     service->OnNewHeartRateValue(heartRate);
   }
+}
+
+void HeartRateController::UpdatePPG(uint16_t hrs, uint16_t als, int16_t x, int16_t y, int16_t z, uint16_t count) {
+  ppgService->OnNewPPGValue(hrs, als, x, y, z, count);
+}
+
+void HeartRateController::SendFileMessage(void* msg) {
+  fileDelegation->PushMessage(msg);
 }
 
 void HeartRateController::Enable() {
@@ -36,4 +45,12 @@ void HeartRateController::SetHeartRateTask(Pinetime::Applications::HeartRateTask
 
 void HeartRateController::SetService(Pinetime::Controllers::HeartRateService* service) {
   this->service = service;
+}
+
+void HeartRateController::SetPPGService(Pinetime::Controllers::PPGService* service) {
+  this->ppgService = service;
+}
+
+void HeartRateController::SetFileDelegation(Pinetime::Controllers::FileDelegationTask* task) {
+  this->fileDelegation = task;
 }
