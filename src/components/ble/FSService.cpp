@@ -16,9 +16,12 @@ int FSServiceCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gat
   return fsService->OnFSServiceRequested(conn_handle, attr_handle, ctxt);
 }
 
-FSService::FSService(Pinetime::System::SystemTask& systemTask, Pinetime::Controllers::FS& fs)
+FSService::FSService(Pinetime::System::SystemTask& systemTask,
+                     Pinetime::Controllers::FS& fs,
+                     Pinetime::Controllers::FileDelegationTask& fileDelegation)
   : systemTask {systemTask},
     fs {fs},
+    fileDelegation {fileDelegation},
     characteristicDefinition {{.uuid = &fsVersionUuid.u,
                                .access_cb = FSServiceCallback,
                                .arg = this,
@@ -78,11 +81,11 @@ int FSService::FSCommandHandler(uint16_t connectionHandle, os_mbuf* om) {
   auto command = static_cast<commands>(om->om_data[0]);
   NRF_LOG_INFO("[FS_S] -> FSCommandHandler Command %d", command);
   // Just always make sure we are awake...
-  systemTask.PushMessage(Pinetime::System::Messages::StartFileTransfer);
-  vTaskDelay(10);
-  while (systemTask.IsSleeping()) {
-    vTaskDelay(100); // 50ms
-  }
+  // systemTask.PushMessage(Pinetime::System::Messages::StartFileTransfer);
+  // vTaskDelay(10);
+  // while (systemTask.IsSleeping()) {
+  //   vTaskDelay(100); // 50ms
+  // }
   lfs_dir_t dir = {0};
   lfs_info info = {0};
   lfs_file f = {0};
@@ -152,6 +155,18 @@ int FSService::FSCommandHandler(uint16_t connectionHandle, os_mbuf* om) {
       }
       fs.FileClose(&f);
       ble_gattc_notify_custom(connectionHandle, transferCharacteristicHandle, om);
+      break;
+    }
+    case commands::READ_BIN: {
+      auto* msg =
+        static_cast<Controllers::FileDelegationTask::SendHRSACCData*>(malloc(sizeof(Controllers::FileDelegationTask::SendHRSACCData)));
+      if (msg == nullptr) {
+        return -1;
+      }
+      msg->message = Controllers::FileDelegationTask::Messages::SendHRSACC;
+      msg->connectionHandle = connectionHandle;
+      msg->transferCharacteristicHandle = transferCharacteristicHandle;
+      fileDelegation.PushMessage(msg);
       break;
     }
     case commands::WRITE: {

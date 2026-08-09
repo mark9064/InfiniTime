@@ -4,6 +4,7 @@
 #include <drivers/Bma421.h>
 #include <limits>
 #include <optional>
+#include "components/ble/filedelegationtask/FileDelegationTask.h"
 
 #include "utility/Math.h"
 
@@ -191,16 +192,41 @@ void HeartRateTask::StartMeasurement() {
   ppg.Reset();
   lastHrs = 0;
   count = 0;
+  auto* msg = static_cast<Controllers::FileDelegationTask::Messages*>(malloc(sizeof(Controllers::FileDelegationTask::Messages)));
+  if (msg == nullptr) {
+    return;
+  }
+  *msg = Controllers::FileDelegationTask::Messages::ClearHRSACC;
+  controller.SendFileMessage(msg);
   measurementStartTime = xTaskGetTickCount();
 }
 
 void HeartRateTask::StopMeasurement() {
   heartRateSensor.Disable();
+  auto* msg = static_cast<Controllers::FileDelegationTask::Messages*>(malloc(sizeof(Controllers::FileDelegationTask::Messages)));
+  if (msg == nullptr) {
+    return;
+  }
+  *msg = Controllers::FileDelegationTask::Messages::FlushHRSACC;
+  controller.SendFileMessage(msg);
 }
 
 void HeartRateTask::HandleSensorData() {
   auto sensorData = heartRateSensor.ReadHrsAls();
   auto motionValues = motionSensor.Process();
+  auto* msg =
+    static_cast<Controllers::FileDelegationTask::WriteHRSACCData*>(malloc(sizeof(Controllers::FileDelegationTask::WriteHRSACCData)));
+  if (msg != nullptr) {
+    msg->message = Controllers::FileDelegationTask::Messages::WriteHRSACC;
+    msg->hrs = sensorData.hrs;
+    msg->als = sensorData.als;
+    msg->accX = motionValues.x;
+    msg->accY = motionValues.y;
+    msg->accZ = motionValues.z;
+    controller.SendFileMessage(msg);
+  }
+
+  controller.UpdatePPG(sensorData.hrs, sensorData.als, motionValues.x, motionValues.y, motionValues.z, count);
 
   // Reset whenever signal becomes active
   // Need to avoid feeding 0 values into the algorithm
